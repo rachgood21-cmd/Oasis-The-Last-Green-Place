@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OASIS: The Last Green Place</title>
+<style>
+body {
+    margin: 0;
+    background: #0b0b0b;
+    color: #ccc;
+    font-family: monospace;
+}
+#ui {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border: 1px solid #333;
+}
+canvas {
+    display: block;
+    margin: auto;
+    background: #111;
+}
+</style>
+</head>
+<body>
+
+<div id="ui">
+    <div>Region: <span id="region"></span></div>
+    <div>Exhaustion: <span id="exhaustion">20</span></div>
+    <div>Infection: <span id="infection">0</span></div>
+</div>
+
+<canvas id="map" width="1000" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("map");
+const ctx = canvas.getContext("2d");
+
+let player = { x: 500, y: 300 };
+let exhaustion = 20;
+let infection = 0;
+
+const regions = [
+  { name: "West", x: 0, w: 250, color: "#2b2b2b", plants: "#334422" },
+  { name: "Midwest", x: 250, w: 250, color: "#252525", plants: "#444422" },
+  { name: "South", x: 500, w: 250, color: "#202020", plants: "#553311" },
+  { name: "East", x: 750, w: 250, color: "#1b1b1b", plants: "#224433" }
+];
+
+let locations = [];
+let zombies = [];
+let survivors = [];
+
+let oasis = {
+  x: Math.random() * 1000,
+  y: Math.random() * 600
+};
+
+function spawnWorld() {
+  for (let i = 0; i < 80; i++) {
+    locations.push({
+      x: Math.random() * 1000,
+      y: Math.random() * 600,
+      type: ["house","junkyard","road","car"][Math.floor(Math.random()*4)]
+    });
+  }
+
+  for (let i = 0; i < 40; i++) {
+    zombies.push({
+      x: Math.random() * 1000,
+      y: Math.random() * 600
+    });
+  }
+
+  for (let i = 0; i < 15; i++) {
+    survivors.push({
+      x: Math.random() * 1000,
+      y: Math.random() * 600
+    });
+  }
+}
+
+function drawRegions() {
+  regions.forEach(r => {
+    ctx.fillStyle = r.color;
+    ctx.fillRect(r.x, 0, r.w, 600);
+  });
+}
+
+function drawLocations() {
+  locations.forEach(l => {
+    if (l.type === "house") ctx.fillStyle = "#444";
+    if (l.type === "junkyard") ctx.fillStyle = "#663";
+    if (l.type === "road") ctx.fillStyle = "#333";
+    if (l.type === "car") ctx.fillStyle = "#555";
+    ctx.fillRect(l.x, l.y, 6, 6);
+  });
+}
+
+function drawZombies() {
+  zombies.forEach(z => {
+    let dist = Math.hypot(z.x - oasis.x, z.y - oasis.y);
+    ctx.fillStyle = dist < 100 ? "#444" : "#772222";
+    ctx.fillRect(z.x, z.y, 4, 4);
+  });
+}
+
+function drawSurvivors() {
+  survivors.forEach(s => {
+    ctx.fillStyle = "#999";
+    ctx.fillRect(s.x, s.y, 4, 4);
+  });
+}
+
+function drawOasis() {
+  let dist = Math.hypot(player.x - oasis.x, player.y - oasis.y);
+  ctx.fillStyle = dist < 120 ? "#44aa66" : "#224433";
+  ctx.beginPath();
+  ctx.arc(oasis.x, oasis.y, 10, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawPlayer() {
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(player.x, player.y, 6, 6);
+}
+
+function updateRegion() {
+  const r = regions.find(r => player.x >= r.x && player.x < r.x + r.w);
+  document.getElementById("region").textContent = r ? r.name : "Unknown";
+}
+
+function gameLoop() {
+  ctx.clearRect(0,0,1000,600);
+
+  drawRegions();
+  drawLocations();
+  drawZombies();
+  drawSurvivors();
+  drawOasis();
+  drawPlayer();
+
+  updateRegion();
+  requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") player.y -= 5;
+  if (e.key === "ArrowDown") player.y += 5;
+  if (e.key === "ArrowLeft") player.x -= 5;
+  if (e.key === "ArrowRight") player.x += 5;
+
+  exhaustion += 0.2;
+  if (Math.random() < 0.01) infection += 1;
+});
+
+spawnWorld();
+gameLoop();
+</script>
+
+</body>
+</html>
