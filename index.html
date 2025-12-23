@@ -1,165 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>OASIS: The Last Green Place</title>
-<style>
-body {
-    margin: 0;
-    background: #0b0b0b;
-    color: #ccc;
-    font-family: monospace;
-}
-#ui {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    background: rgba(0,0,0,0.7);
-    padding: 10px;
-    border: 1px solid #333;
-}
-canvas {
-    display: block;
-    margin: auto;
-    background: #111;
-}
-</style>
-</head>
-<body>
+import random
+import time
 
-<div id="ui">
-    <div>Region: <span id="region"></span></div>
-    <div>Exhaustion: <span id="exhaustion">20</span></div>
-    <div>Infection: <span id="infection">0</span></div>
-</div>
+class OasisGame:
+    def __init__(self):
+        self.inventory = ["Water", "Rags", "Knife"]
+        self.exhaustion = 0
+        self.sanity = 100
+        self.distance_to_oasis = 5
+        self.has_companion = True
+        self.is_infected = random.choice([True, False]) # Hidden status
 
-<canvas id="map" width="1000" height="600"></canvas>
+    def game_loop(self):
+        print("--- OASIS: THE LAST GREEN PLACE ---")
+        print("The sun feels heavy. It's purple today. That isn't right.")
+        
+        while self.distance_to_oasis > 0:
+            self.status_report()
+            choice = input("\nDo you: [1] Trek Forward [2] Scavenge [3] Talk to Companion: ")
+            
+            if choice == "1":
+                self.trek()
+            elif choice == "2":
+                self.scavenge()
+            elif choice == "3":
+                self.interact_companion()
+            else:
+                print("Inaction is a slow death.")
 
-<script>
-const canvas = document.getElementById("map");
-const ctx = canvas.getContext("2d");
+            if self.exhaustion >= 10:
+                print("\nYour heart stops from the strain. You are just another corpse in the sand.")
+                return
 
-let player = { x: 500, y: 300 };
-let exhaustion = 20;
-let infection = 0;
+        self.the_ending()
 
-const regions = [
-  { name: "West", x: 0, w: 250, color: "#2b2b2b", plants: "#334422" },
-  { name: "Midwest", x: 250, w: 250, color: "#252525", plants: "#444422" },
-  { name: "South", x: 500, w: 250, color: "#202020", plants: "#553311" },
-  { name: "East", x: 750, w: 250, color: "#1b1b1b", plants: "#224433" }
-];
+    def status_report(self):
+        print(f"\n--- Distance to Oasis: {self.distance_to_oasis} miles ---")
+        print(f"Inventory: {self.inventory} | Exhaustion: {self.exhaustion}/10")
+        if self.exhaustion > 7:
+            print("(!) Your vision is blurring. The dunes are moving.")
 
-let locations = [];
-let zombies = [];
-let survivors = [];
+    def trek(self):
+        print("\nYou push forward. The sand screams under your boots.")
+        self.distance_to_oasis -= 1
+        self.exhaustion += 2
+        if random.random() < 0.3:
+            print("You see a zombie. It's just standing there, pointing North. It doesn't have a face.")
 
-let oasis = {
-  x: Math.random() * 1000,
-  y: Math.random() * 600
-};
+    def scavenge(self):
+        print("\nYou dig through a rusted car wreck...")
+        self.exhaustion += 1
+        items = ["Canned Food", "Old Map", "Ammo", "Nothing"]
+        found = random.choice(items)
+        
+        if len(self.inventory) >= 4:
+            print(f"You found {found}, but you are too tired to carry more. You leave it.")
+        else:
+            print(f"You found {found}!")
+            if found != "Nothing": self.inventory.append(found)
 
-function spawnWorld() {
-  for (let i = 0; i < 80; i++) {
-    locations.push({
-      x: Math.random() * 1000,
-      y: Math.random() * 600,
-      type: ["house","junkyard","road","car"][Math.floor(Math.random()*4)]
-    });
-  }
+    def interact_companion(self):
+        if not self.has_companion:
+            print("You talk to the wind. There is no one else.")
+            return
+            
+        print("\nYour companion, Elias, looks at you. His eyes are bloodshot.")
+        print("'I heard a rumour,' he whispers. 'They say the Oasis only takes those who are pure.'")
+        trust = input("Do you [1] Share water with him [2] Check his pulse while he sleeps: ")
+        if trust == "1":
+            print("He nods, but hides his hands behind his back.")
+        else:
+            print("He flinches. 'Don't touch me! I'm fine!'")
 
-  for (let i = 0; i < 40; i++) {
-    zombies.push({
-      x: Math.random() * 1000,
-      y: Math.random() * 600
-    });
-  }
+    def the_ending(self):
+        print("\n--- THE EDGE OF THE OASIS ---")
+        print("The air is suddenly cool. You see green trees. It's real.")
+        
+        if self.has_companion:
+            print("\nElias grabs your arm. 'We made it. But... I feel the gate. It's too small for two.'")
+            choice = input("Do you [1] Kill Elias to enter alone [2] Try to enter together: ")
+            
+            if choice == "1":
+                print("The deed is done. You step into the green... and the world vanishes. It was a dream.")
+            elif choice == "2":
+                if self.is_infected:
+                    print("Elias passes through. You hit an invisible wall. You are infected. You watch him disappear into paradise while you rot outside.")
+                else:
+                    print("You both step forward. The Oasis dissolves into ash. A shared hallucination of the dying.")
+        else:
+            print("You reach the water. You drink. It tastes like copper. You die alone, but happy.")
 
-  for (let i = 0; i < 15; i++) {
-    survivors.push({
-      x: Math.random() * 1000,
-      y: Math.random() * 600
-    });
-  }
-}
-
-function drawRegions() {
-  regions.forEach(r => {
-    ctx.fillStyle = r.color;
-    ctx.fillRect(r.x, 0, r.w, 600);
-  });
-}
-
-function drawLocations() {
-  locations.forEach(l => {
-    if (l.type === "house") ctx.fillStyle = "#444";
-    if (l.type === "junkyard") ctx.fillStyle = "#663";
-    if (l.type === "road") ctx.fillStyle = "#333";
-    if (l.type === "car") ctx.fillStyle = "#555";
-    ctx.fillRect(l.x, l.y, 6, 6);
-  });
-}
-
-function drawZombies() {
-  zombies.forEach(z => {
-    let dist = Math.hypot(z.x - oasis.x, z.y - oasis.y);
-    ctx.fillStyle = dist < 100 ? "#444" : "#772222";
-    ctx.fillRect(z.x, z.y, 4, 4);
-  });
-}
-
-function drawSurvivors() {
-  survivors.forEach(s => {
-    ctx.fillStyle = "#999";
-    ctx.fillRect(s.x, s.y, 4, 4);
-  });
-}
-
-function drawOasis() {
-  let dist = Math.hypot(player.x - oasis.x, player.y - oasis.y);
-  ctx.fillStyle = dist < 120 ? "#44aa66" : "#224433";
-  ctx.beginPath();
-  ctx.arc(oasis.x, oasis.y, 10, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function drawPlayer() {
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(player.x, player.y, 6, 6);
-}
-
-function updateRegion() {
-  const r = regions.find(r => player.x >= r.x && player.x < r.x + r.w);
-  document.getElementById("region").textContent = r ? r.name : "Unknown";
-}
-
-function gameLoop() {
-  ctx.clearRect(0,0,1000,600);
-
-  drawRegions();
-  drawLocations();
-  drawZombies();
-  drawSurvivors();
-  drawOasis();
-  drawPlayer();
-
-  updateRegion();
-  requestAnimationFrame(gameLoop);
-}
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") player.y -= 5;
-  if (e.key === "ArrowDown") player.y += 5;
-  if (e.key === "ArrowLeft") player.x -= 5;
-  if (e.key === "ArrowRight") player.x += 5;
-
-  exhaustion += 0.2;
-  if (Math.random() < 0.01) infection += 1;
-});
-
-spawnWorld();
-gameLoop();
-</script>
-
-</body>
-</html>
+# Start the game
+game = OasisGame()
+game.game_loop()
